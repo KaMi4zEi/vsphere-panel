@@ -1,19 +1,17 @@
 "use client";
 import { appChangePasswordPageStyles as s } from "@/styles";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { passwordPolicyError } from "@/lib/password-policy";
+import { useSiteName } from "@/lib/site-context";
+import BrandIcon from "@/components/BrandIcon";
 
 export default function ChangePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [siteName, setSiteName] = useState("vSphere Panel");
-
-  useEffect(() => {
-    fetch("/api/identity").then(r => r.json()).then(d => { if (d.siteName) setSiteName(d.siteName); });
-  }, []);
+  const siteName = useSiteName();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,11 +40,7 @@ export default function ChangePasswordPage() {
     <div style={s.page}>
       <div style={s.card}>
         <div style={s.header}>
-          <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="6" fill="#2563eb"/>
-            <rect x="5" y="9" width="18" height="12" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
-            <circle cx="9" cy="15" r="2" fill="white" opacity=".8"/>
-          </svg>
+          <BrandIcon size={32} />
           <h1 style={s.title}>{siteName}</h1>
           <p style={s.subtitle}>Changement de mot de passe requis</p>
         </div>

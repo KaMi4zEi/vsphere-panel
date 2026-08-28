@@ -2,7 +2,7 @@
 
 Panel web responsive d’administration et de libre-service pour VMware vSphere 8.
 
-Version actuelle : **1.3.3**.
+Version actuelle : **1.3.4**.
 
 ## Fonctionnalités
 
@@ -172,6 +172,17 @@ sudo sh ./update.sh ./vsphere-panel-vX.Y.Z.tar.gz
 ```
 
 Le script vérifie le hash et la structure de l’archive, refuse tout `.env` embarqué, sauvegarde PostgreSQL, `.env` et les fichiers applicatifs, conserve les secrets locaux, reconstruit les images, applique le schéma puis redémarre les services. Les sauvegardes sont placées dans `/var/backups/vsphere-panel`.
+
+Si `update.sh` est absent d’une installation antérieure, amorcez-le une seule fois depuis l’archive téléchargée :
+
+```bash
+mkdir -p /tmp/vsphere-panel-bootstrap
+tar -xzf ./vsphere-panel-vX.Y.Z.tar.gz -C /tmp/vsphere-panel-bootstrap --strip-components=1
+sudo install -m 0750 /tmp/vsphere-panel-bootstrap/update.sh /opt/vsphere-panel/update.sh
+sudo sh /opt/vsphere-panel/update.sh ./vsphere-panel-vX.Y.Z.tar.gz
+```
+
+Les mises à jour suivantes utilisent directement le programme installé dans `/opt/vsphere-panel`.
 
 ## Organisation du dépôt
 

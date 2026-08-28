@@ -4,6 +4,17 @@ Toutes les modifications notables de ce projet sont documentées ici. Le format 
 
 ## [Non publié]
 
+## [1.3.4] - 2026-08-29
+
+### Interface
+
+- Utilisation du nom et de l’icône configurés sur les écrans de changement obligatoire du mot de passe et de première configuration TOTP.
+- Affichage explicite de la clé TOTP manuelle dans un champ en lecture seule, avec validation de la réponse API et bouton de copie.
+
+### Déploiement
+
+- Documentation de l’amorçage unique de `update.sh` pour les installations antérieures qui ne possèdent pas encore ce programme.
+
 ## [1.3.3] - 2026-08-28
 
 ### Déploiement

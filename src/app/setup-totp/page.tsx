@@ -3,24 +3,38 @@ import { appSetupTotpPageStyles as s } from "@/styles";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import QRCode from "qrcode";
+import { useSiteName } from "@/lib/site-context";
+import BrandIcon from "@/components/BrandIcon";
 
 export default function SetupTotpPage() {
   const [setup, setSetup] = useState<{ secret: string; uri: string } | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [siteName, setSiteName] = useState("vSphere Panel");
   const [qrData, setQrData] = useState("");
+  const [copied, setCopied] = useState(false);
+  const siteName = useSiteName();
 
   useEffect(() => {
-    fetch("/api/identity").then(r => r.json()).then(d => { if (d.siteName) setSiteName(d.siteName); });
     fetch("/api/totp").then(async r => {
       const data = await r.json();
-      if (!r.ok || !data.uri) throw new Error(data.error || "Configuration TOTP indisponible");
-      setSetup(data);
+      if (!r.ok || typeof data.uri !== "string" || typeof data.secret !== "string" || !data.secret) {
+        throw new Error(data.error || "Configuration TOTP indisponible");
+      }
+      setSetup({ uri: data.uri, secret: data.secret });
       setQrData(await QRCode.toDataURL(data.uri, { width: 200, margin: 1 }));
     }).catch(() => setError("Impossible de préparer la configuration TOTP. Réessayez."));
   }, []);
+
+  async function copySecret() {
+    if (!setup) return;
+    try {
+      await navigator.clipboard.writeText(setup.secret);
+      setCopied(true);
+    } catch {
+      setError("Copie automatique impossible. Sélectionnez la clé manuellement.");
+    }
+  }
 
   async function confirm(e: React.FormEvent) {
     e.preventDefault();
@@ -46,13 +60,7 @@ export default function SetupTotpPage() {
     <div style={s.page}>
       <div style={s.card}>
         <div style={s.header}>
-          <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="6" fill="#2563eb"/>
-            <rect x="5" y="9" width="18" height="12" rx="2" stroke="white" strokeWidth="1.5" fill="none"/>
-            <circle cx="9" cy="15" r="2" fill="white" opacity=".8"/>
-            <line x1="13" y1="13" x2="21" y2="13" stroke="white" strokeWidth="1" strokeLinecap="round" opacity=".6"/>
-            <line x1="13" y1="15" x2="21" y2="15" stroke="white" strokeWidth="1" strokeLinecap="round" opacity=".6"/>
-          </svg>
+          <BrandIcon size={32} />
           <h1 style={s.title}>{siteName}</h1>
           <p style={s.subtitle}>Configuration de l'authentification à deux facteurs</p>
         </div>
@@ -72,8 +80,11 @@ export default function SetupTotpPage() {
               />}
             </div>
             <div style={{ margin: "12px 0 18px", padding: 12, border: "1px solid var(--border)", borderRadius: 8, background: "var(--surface2)" }}>
-              <div style={{ fontSize: 12, color: "var(--text2)", marginBottom: 6 }}>Clé de configuration manuelle</div>
-              <code style={{ display: "block", overflowWrap: "anywhere", fontSize: 13, userSelect: "all" }}>{setup.secret}</code>
+              <label htmlFor="totp-secret" style={{ display: "block", fontSize: 12, color: "var(--text2)", marginBottom: 6 }}>Clé de configuration manuelle</label>
+              <div style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+                <input id="totp-secret" value={setup.secret} readOnly spellCheck={false} autoComplete="off" aria-label="Clé secrète TOTP" style={{ minWidth: 0, flex: 1, padding: "8px 10px", border: "1px solid var(--border2)", borderRadius: "var(--radius)", background: "var(--surface)", color: "var(--text)", fontFamily: "monospace", fontSize: 13 }} />
+                <button type="button" onClick={copySecret} style={{ padding: "0 12px", border: "1px solid var(--border2)", borderRadius: "var(--radius)", background: "var(--surface)", color: "var(--text)", cursor: "pointer", fontSize: 12 }}>{copied ? "Copiée" : "Copier"}</button>
+              </div>
             </div>
             <p style={s.step}><strong>2.</strong> Entrez le code à 6 chiffres affiché dans votre application.</p>
             <form onSubmit={confirm} style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
