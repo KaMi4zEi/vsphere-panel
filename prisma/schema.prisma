@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String        @id @default(cuid())
+  username        String        @unique
+  email           String        @unique
+  password        String
+  role            Role          @default(USER)
+  totpSecret      String?
+  totpPendingSecret String?
+  totpPendingAt     DateTime?
+  totpEnabled     Boolean       @default(false)
+  totpDisabled    Boolean       @default(false)
+  totpDisabledUntil DateTime?
+  totpForced      Boolean       @default(true)
+  passwordResetAt    DateTime?
+  mustChangePassword Boolean  @default(false) // Force changement mdp à la prochaine connexion
+  sessionVersion   Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  assignments     Assignment[]
+  logs            ActivityLog[]
+  notifications   UserNotification?
+  auditLogs       AuditLog[]
+}
+
+model VM {
+  id            String        @id @default(cuid())
+  vcenterVmId   String        @unique
+  name          String
+  customName    String?       // Nom personnalisé (tag)
+  os            String        @default("")
+  vcpu          Int           @default(1)
+  ramGb         Int           @default(1)
+  diskCount     Int           @default(0)
+  diskTotalGb   Float         @default(0)
+  notes         String?
+  isInfra       Boolean       @default(false)
+  lastPowerState String?
+  lastPowerCheckedAt DateTime?
+  lastPowerCommandAt DateTime?
+  createdAt     DateTime      @default(now())
+  assignments   Assignment[]
+  logs          ActivityLog[]
+}
+
+model Assignment {
+  id         String   @id @default(cuid())
+  userId     String
+  vmId       String
+  customName String?  // Nom personnalisé par l'utilisateur pour cette VM
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vm         VM       @relation(fields: [vmId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vmId])
+}
+
+model ActivityLog {
+  // Table historique conservée pour compatibilité avec la base déjà en production.
+  // Les nouveaux événements sont écrits dans AuditLog.
+  id        String   @id @default(cuid())
+  userId    String?
+  vmId      String?
+  usernameSnapshot String @default("")
+  emailSnapshot String @default("")
+  vmNameSnapshot String @default("")
+  vcenterVmIdSnapshot String @default("")
+  action    Action
+  success   Boolean  @default(true)
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vm        VM?      @relation(fields: [vmId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([vmId])
+  @@index([createdAt])
+}
+
+model SiteSettings {
+  id          String  @id @default("singleton")
+  siteName    String  @default("vSphere Panel")
+  faviconData String?
+  faviconType String?
+  smtpHost    String?
+  smtpPort    String?
+  smtpSecure  String?
+  smtpUser    String?
+  smtpPass    String?
+  smtpFrom    String?
+  vcenterHost String?
+  vcenterUser String?
+  vcenterPass String?
+  vcenterTlsVerify Boolean @default(true)
+  vcenterMonitorEnabled Boolean @default(false)
+  vcenterMonitorIntervalSeconds Int @default(300)
+  vcenterMonitorLastRunAt DateTime?
+  trustedProxyIps String @default("")
+}
+
+model AuditLog {
+  id               String        @id @default(cuid())
+  actorUserId      String?
+  actorUsername    String        @default("")
+  actorEmail       String        @default("")
+  action           AuditAction
+  visibility       LogVisibility @default(STAFF)
+  targetType       String?
+  targetId         String?
+  targetLabel      String?
+  details          String?
+  success          Boolean       @default(true)
+  ipAddress        String?
+  createdAt        DateTime      @default(now())
+  actor             User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([visibility, createdAt])
+  @@index([createdAt])
+}
+
+model UserNotification {
+  id                 String  @id @default(cuid())
+  userId             String  @unique
+  infraStoppedAlert  Boolean @default(false)
+  infraStartedAlert  Boolean @default(false)
+  vmPowerAlert       Boolean @default(false)
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+enum Action {
+  POWER_ON
+  POWER_OFF
+}
+
+enum LogVisibility {
+  STAFF
+  ADMIN_ONLY
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  USER_CREATED
+  USER_DELETED
+  ROLE_CHANGED
+  PASSWORD_CHANGED
+  PASSWORD_RESET
+  TOTP_CONFIGURED
+  TOTP_RESET
+  TOTP_DISABLED
+  TOTP_ENABLED
+  NOTIFICATION_PREFERENCES_CHANGED
+  VM_ASSIGNED
+  VM_UNASSIGNED
+  VM_TAG_UPDATED
+  POWER_ON
+  POWER_OFF
+  VM_CREATED
+  VM_DELETED
+  VM_SYNCED
+  VM_REFRESHED
+  INFRASTRUCTURE_CHANGED
+  SITE_SETTINGS_CHANGED
+  SMTP_SETTINGS_CHANGED
+  VCENTER_SETTINGS_CHANGED
+}

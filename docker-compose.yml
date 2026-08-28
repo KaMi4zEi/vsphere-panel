@@ -1,0 +1,91 @@
+# docker-compose.yml
+# Production : docker compose up -d
+# Dev (avec MailHog) : docker compose --profile dev up -d
+#
+# ─── .env : seules ces variables sont à renseigner ───────────────
+#   POSTGRES_PASSWORD   → mot de passe BDD (utilisé automatiquement partout)
+#   NEXTAUTH_SECRET     → openssl rand -base64 32
+#   NEXTAUTH_URL        → http://localhost:3000 ou https://votre-domaine
+# ─────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── Base de données PostgreSQL ──────────────────────────────
+  postgres:
+    image: postgres:17.11-alpine3.24
+    container_name: vsphere_panel_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vsphere_panel
+      POSTGRES_USER: vsphere_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vsphere_user -d vsphere_panel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vsphere_net
+
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: db-init
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://vsphere_user:${POSTGRES_PASSWORD}@postgres:5432/vsphere_panel
+    networks:
+      - vsphere_net
+
+  # ─── Application Next.js ─────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vsphere_panel_app
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      # DATABASE_URL est construit automatiquement depuis POSTGRES_PASSWORD
+      DATABASE_URL: postgresql://vsphere_user:${POSTGRES_PASSWORD}@postgres:5432/vsphere_panel
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET est obligatoire}
+      SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:?SETTINGS_ENCRYPTION_KEY est obligatoire}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - vsphere_net
+
+  # ─── MailHog (dev uniquement) ────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: vsphere_panel_mailhog
+    profiles: ["dev"]
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - vsphere_net
+
+volumes:
+  postgres_data:
+    name: vsphere_panel_postgres_data
+
+networks:
+  vsphere_net:
+    name: vsphere_panel_network
