@@ -7,6 +7,7 @@ import { generate, generateSecret, generateURI, verify } from "otplib";
 import { validateFaviconDataUrl } from "../src/lib/favicon";
 import { generateTemporaryPassword, passwordPolicyError } from "../src/lib/password-policy";
 import { isTotpBypassActive } from "../src/lib/totp-policy";
+import { canAccessDuringPasswordChange } from "../src/lib/access-policy";
 
 function svgDataUrl(svg: string) {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
@@ -95,6 +96,13 @@ describe("favicons SVG", () => {
 });
 
 describe("politique de mot de passe", () => {
+  it("autorise uniquement la page et l'API nécessaires au changement obligatoire", () => {
+    expect(canAccessDuringPasswordChange("/change-password")).toBe(true);
+    expect(canAccessDuringPasswordChange("/api/profile/change-password")).toBe(true);
+    expect(canAccessDuringPasswordChange("/api/profile")).toBe(false);
+    expect(canAccessDuringPasswordChange("/api/profile/change-password/other")).toBe(false);
+  });
+
   it("refuse un mot de passe composé uniquement de chiffres", () => {
     expect(passwordPolicyError("123456789012")).not.toBeNull();
   });

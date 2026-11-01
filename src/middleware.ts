@@ -1,5 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { canAccessDuringPasswordChange } from "@/lib/access-policy";
 
 const protectedPages = ["/dashboard", "/admin", "/profile", "/setup-totp", "/change-password"];
 const protectedApis = ["/api/users", "/api/vms", "/api/power", "/api/logs", "/api/profile", "/api/totp", "/api/stats", "/api/notifications", "/api/infrastructure", "/api/admin", "/api/identity"];
@@ -43,7 +44,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const isPage = !pathname.startsWith("/api");
-  if (token.mustChangePassword && pathname !== "/change-password") return secure(isPage ? NextResponse.redirect(new URL("/change-password", req.url)) : NextResponse.json({ error: "Le mot de passe doit être modifié avant de continuer" }, { status: 403 }));
+  if (token.mustChangePassword && !canAccessDuringPasswordChange(pathname)) return secure(isPage ? NextResponse.redirect(new URL("/change-password", req.url)) : NextResponse.json({ error: "Le mot de passe doit être modifié avant de continuer" }, { status: 403 }));
   const needsTotp = !token.mustChangePassword && (role === "USER" || role === "MODERATOR") && token.totpForced && !token.totpEnabled && !token.totpDisabled;
   if (needsTotp && pathname !== "/setup-totp" && pathname !== "/api/totp") return secure(isPage ? NextResponse.redirect(new URL("/setup-totp", req.url)) : NextResponse.json({ error: "Le TOTP doit être configuré avant de continuer" }, { status: 403 }));
   return next();

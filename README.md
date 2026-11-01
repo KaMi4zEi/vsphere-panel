@@ -2,7 +2,7 @@
 
 Panel web responsive d’administration et de libre-service pour VMware vSphere 8.
 
-Version actuelle : **1.3.5**.
+Version actuelle : **1.3.6**.
 
 ## Fonctionnalités
 

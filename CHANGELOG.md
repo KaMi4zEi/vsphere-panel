@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées ici. Le format 
 
 ## [Non publié]
 
+## [1.3.6] - 2026-11-01
+
+### Correction
+
+- Autorisation ciblée de l'API de changement obligatoire du mot de passe dans le middleware, afin qu'un utilisateur puisse remplacer le mot de passe temporaire reçu après une réinitialisation administrative.
+
 ## [1.3.5] - 2026-11-01
 
 ### Sécurité
