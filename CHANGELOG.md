@@ -4,6 +4,8 @@ Toutes les modifications notables de ce projet sont documentées ici. Le format 
 
 ## [Non publié]
 
+## [1.3.5] - 2026-11-01
+
 ### Sécurité
 
 - Mise à jour de Next.js vers 15.5.28 et verrouillage de Sharp 0.35.5 pour corriger la vulnérabilité critique d'exécution de code à distance CVE-2026-96889.
