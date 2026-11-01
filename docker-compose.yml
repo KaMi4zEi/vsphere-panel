@@ -67,7 +67,9 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET est obligatoire}
       SETTINGS_ENCRYPTION_KEY: ${SETTINGS_ENCRYPTION_KEY:?SETTINGS_ENCRYPTION_KEY est obligatoire}
     ports:
-      - "${APP_PORT:-3000}:3000"
+      # Ne pas exposer Next.js directement sur toutes les interfaces :
+      # le reverse proxy local doit rester le seul point d'entree public.
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3000}:3000"
     networks:
       - vsphere_net
 

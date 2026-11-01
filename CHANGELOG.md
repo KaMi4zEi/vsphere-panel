@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées ici. Le format 
 
 ## [Non publié]
 
+### Sécurité
+
+- Mise à jour de Next.js vers 15.5.28 et verrouillage de Sharp 0.35.5 pour corriger la vulnérabilité critique d'exécution de code à distance CVE-2026-96889.
+- Mise à jour de Nodemailer et de `source-map-js` vers leurs versions corrigées ; l'audit des dépendances de production ne signale plus aucune vulnérabilité.
+- Liaison du port applicatif Docker à `127.0.0.1` par défaut afin que le reverse proxy reste le seul point d'entrée public ; l'adresse reste configurable avec `APP_BIND_ADDRESS`.
+
 ## [1.3.4] - 2026-08-29
 
 ### Interface
