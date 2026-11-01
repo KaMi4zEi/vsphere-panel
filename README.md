@@ -66,10 +66,13 @@ POSTGRES_PASSWORD=mot_de_passe_alphanumerique_robuste
 NEXTAUTH_SECRET=une_valeur_aleatoire_distincte_de_32_caracteres_minimum
 SETTINGS_ENCRYPTION_KEY=une_autre_valeur_aleatoire_de_32_caracteres_minimum
 NEXTAUTH_URL=http://localhost:3000
+APP_BIND_ADDRESS=127.0.0.1
 APP_PORT=3000
 ```
 
 Générez deux secrets distincts, par exemple avec `openssl rand -base64 32`.
+
+`APP_BIND_ADDRESS=127.0.0.1` empêche l'accès direct au port Next.js et convient lorsque le reverse proxy fonctionne sur le même hôte. Si le reverse proxy se trouve dans un autre conteneur ou sur une autre machine et doit joindre le port publié, utilisez `APP_BIND_ADDRESS=0.0.0.0` et protégez impérativement ce port avec le pare-feu afin que seul le proxy puisse y accéder.
 
 `SETTINGS_ENCRYPTION_KEY` chiffre les secrets SMTP, vCenter et TOTP stockés en base. Elle doit rester stable : sa perte rend ces données illisibles.
 
